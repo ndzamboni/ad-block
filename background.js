@@ -11,6 +11,15 @@ async function fetchEasyList() {
   }
 }
 
+function isValidUrlPattern(pattern) {
+  try {
+    new URL(pattern);
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
 function parseEasyList(easyListText) {
   const lines = easyListText.split('\n');
   const rules = [];
@@ -25,8 +34,8 @@ function parseEasyList(easyListText) {
     // Handle simple domain blocking rules
     if (line.startsWith('||')) {
       const domain = line.slice(2).split('^')[0];
-      // Ensure the domain does not include '*'
-      if (domain.includes('*')) {
+      // Ensure the domain does not include '*' or other invalid characters
+      if (domain.includes('*') || domain.includes('?') || domain.includes('&')) {
         console.warn(`Skipping invalid domain pattern: ${domain}`);
         return;
       }
@@ -39,6 +48,11 @@ function parseEasyList(easyListText) {
           action: { type: 'block' },
           condition: { urlFilter, resourceTypes: ['main_frame', 'sub_frame', 'script', 'image', 'stylesheet', 'object', 'xmlhttprequest', 'other'] }
         });
+
+        // Limit the number of rules to avoid exceeding the Chrome extension limit
+        if (rules.length >= 5000) {
+          throw new Error('Rule limit exceeded');
+        }
       } catch (error) {
         console.error(`Error creating rule for domain: ${domain}`, error);
       }
