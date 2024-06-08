@@ -27,12 +27,22 @@ function parseEasyList(easyListText) {
     // Handle simple domain blocking rules
     if (line.startsWith('||')) {
       const domain = line.slice(2).split('^')[0];
-      rules.push({
-        "id": idCounter++,
-        "priority": 1,
-        "action": { "type": "block" },
-        "condition": { "urlFilter": `*://${domain}/*`, "resourceTypes": ["main_frame", "sub_frame", "script", "image", "stylesheet", "object", "xmlhttprequest", "other"] }
-      });
+      if (domain.includes('*')) {
+        console.warn(`Skipping invalid domain pattern: ${domain}`);
+        return;
+      }
+
+      try {
+        const urlFilter = `*://${domain}/*`;
+        rules.push({
+          id: idCounter++,
+          priority: 1,
+          action: { type: 'block' },
+          condition: { urlFilter, resourceTypes: ['main_frame', 'sub_frame', 'script', 'image', 'stylesheet', 'object', 'xmlhttprequest', 'other'] }
+        });
+      } catch (error) {
+        console.error(`Error creating rule for domain: ${domain}`, error);
+      }
     }
   });
 
@@ -43,8 +53,9 @@ async function initializeBlocker() {
   const easyListText = await fetchEasyList();
   if (easyListText) {
     const rules = parseEasyList(easyListText);
+
     chrome.declarativeNetRequest.updateDynamicRules({
-      removeRuleIds: rules.map((rule, index) => index + 1),
+      removeRuleIds: Array.from({ length: rules.length }, (_, i) => i + 1),
       addRules: rules
     }, () => {
       if (chrome.runtime.lastError) {
