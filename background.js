@@ -1,5 +1,3 @@
-// background.js
-
 const easyListUrl = 'https://easylist.to/easylist/easylist.txt';
 
 async function fetchEasyList() {
@@ -27,6 +25,7 @@ function parseEasyList(easyListText) {
     // Handle simple domain blocking rules
     if (line.startsWith('||')) {
       const domain = line.slice(2).split('^')[0];
+      // Ensure the domain does not include '*'
       if (domain.includes('*')) {
         console.warn(`Skipping invalid domain pattern: ${domain}`);
         return;
@@ -53,6 +52,9 @@ async function initializeBlocker() {
   const easyListText = await fetchEasyList();
   if (easyListText) {
     const rules = parseEasyList(easyListText);
+
+    // Log the number of rules parsed
+    console.log(`Parsed ${rules.length} rules from EasyList`);
 
     chrome.declarativeNetRequest.updateDynamicRules({
       removeRuleIds: Array.from({ length: rules.length }, (_, i) => i + 1),
