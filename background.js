@@ -9,12 +9,14 @@ async function fetchEasyList() {
     return text;
   } catch (error) {
     console.error('Failed to fetch EasyList:', error);
+    return null;
   }
 }
 
 function parseEasyList(easyListText) {
   const lines = easyListText.split('\n');
-  const blockUrls = [];
+  const rules = [];
+  let idCounter = 1;
 
   lines.forEach(line => {
     // Skip comments and empty lines
@@ -25,27 +27,32 @@ function parseEasyList(easyListText) {
     // Handle simple domain blocking rules
     if (line.startsWith('||')) {
       const domain = line.slice(2).split('^')[0];
-      blockUrls.push(`*://${domain}/*`);
+      rules.push({
+        "id": idCounter++,
+        "priority": 1,
+        "action": { "type": "block" },
+        "condition": { "urlFilter": `*://${domain}/*`, "resourceTypes": ["main_frame", "sub_frame", "script", "image", "stylesheet", "object", "xmlhttprequest", "other"] }
+      });
     }
   });
 
-  return blockUrls;
+  return rules;
 }
 
 async function initializeBlocker() {
   const easyListText = await fetchEasyList();
   if (easyListText) {
-    const blockUrls = parseEasyList(easyListText);
-
-    chrome.webRequest.onBeforeRequest.addListener(
-      function(details) {
-        return { cancel: true };
-      },
-      { urls: blockUrls },
-      ["blocking"]
-    );
-
-    console.log('Ad blocker initialized with EasyList');
+    const rules = parseEasyList(easyListText);
+    chrome.declarativeNetRequest.updateDynamicRules({
+      removeRuleIds: rules.map((rule, index) => index + 1),
+      addRules: rules
+    }, () => {
+      if (chrome.runtime.lastError) {
+        console.error('Error updating rules:', chrome.runtime.lastError);
+      } else {
+        console.log('Ad blocker initialized with EasyList rules');
+      }
+    });
   }
 }
 

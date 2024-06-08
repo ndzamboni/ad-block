@@ -1,19 +1,19 @@
 {
   "manifest_version": 3,
-  "name": "Zamblock",
+  "name": "Robust Ad Blocker",
   "version": "1.0",
   "description": "A robust ad blocker extension using EasyList",
   "permissions": [
     "activeTab",
-    "webRequest",
-    "webRequestBlocking",
-    "storage",
-    "http://*/*",
-    "https://*/*"
+    "declarativeNetRequest",
+    "storage"
   ],
   "background": {
     "service_worker": "background.js"
   },
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -32,5 +32,14 @@
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
   }
 }
