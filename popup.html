@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body {
+      width: 200px;
+    }
+  </style>
+</head>
+<body>
+  <h3>Robust Ad Blocker</h3>
+  <button id="whitelist">Whitelist This Site</button>
+
+  <script>
+    document.getElementById('whitelist').addEventListener('click', function() {
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        const url = new URL(tabs[0].url);
+        chrome.storage.sync.get('whitelist', function(data) {
+          const whitelist = data.whitelist || [];
+          if (!whitelist.includes(url.hostname)) {
+            whitelist.push(url.hostname);
+            chrome.storage.sync.set({ whitelist: whitelist }, function() {
+              alert(url.hostname + ' added to whitelist.');
+            });
+          } else {
+            alert(url.hostname + ' is already whitelisted.');
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>

@@ -20,4 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
         'div[id*="banner"]'
     ];
 
+    function removeAds() {
+        adSelectors.forEach(selector => {
+          const ads = document.querySelectorAll(selector);
+          ads.forEach(ad => ad.remove());
+        });
+      }
     
+      removeAds();
+    
+      const observer = new MutationObserver(removeAds);
+      observer.observe(document.body, { childList: true, subtree: true });
+    });
